@@ -15,4 +15,4 @@ jobs:
           curl -i --location --request POST 'https://oqsbagdhvyckhldxguag.supabase.co/functions/v1/fetchStockPrice' \
           --header 'Authorization: Bearer ${{ secrets.SUPABASE_API_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"name":"Auto Fetch Stock Price"}'
+          --data '{"symbol":"AMZN"}'
