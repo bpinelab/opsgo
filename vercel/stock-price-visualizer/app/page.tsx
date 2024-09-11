@@ -1,3 +1,5 @@
+"use client"; // クライアントコンポーネントとして明示する
+
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { supabase } from "../lib/supabaseClient";
@@ -29,7 +31,6 @@ type StockPrice = {
 };
 
 const Home = () => {
-  // stockDataの型をStockPrice[]と明示的に指定
   const [stockData, setStockData] = useState<StockPrice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +48,7 @@ const Home = () => {
     if (error) {
       console.error("Error fetching stock prices:", error);
     } else {
-      setStockData(data as StockPrice[]); // 取得データをStockPrice型にキャスト
+      setStockData(data as StockPrice[]);
     }
 
     setLoading(false);
