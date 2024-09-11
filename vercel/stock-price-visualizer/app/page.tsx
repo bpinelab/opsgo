@@ -35,24 +35,25 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // useEffectの中でSupabaseのデータ取得を行う
+    const fetchStockPrices = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("stock_prices")
+        .select("*")
+        .order("timestamp", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching stock prices:", error);
+      } else {
+        setStockData(data as StockPrice[]);
+      }
+
+      setLoading(false);
+    };
+
     fetchStockPrices();
   }, []);
-
-  const fetchStockPrices = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("stock_prices")
-      .select("*")
-      .order("timestamp", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching stock prices:", error);
-    } else {
-      setStockData(data as StockPrice[]);
-    }
-
-    setLoading(false);
-  };
 
   const chartData = {
     labels: stockData.map((item) =>
