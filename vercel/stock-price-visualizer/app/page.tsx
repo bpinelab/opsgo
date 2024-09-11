@@ -73,7 +73,7 @@ const Home = () => {
     responsive: true,
     plugins: {
       legend: {
-        position: "top",
+        position: "top" as const, // 型指定
       },
       title: {
         display: true,
