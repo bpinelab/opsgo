@@ -31,63 +31,135 @@ type StockPrice = {
 };
 
 const Home = () => {
-  const [stockData, setStockData] = useState<StockPrice[]>([]);
+  const [stockData, setStockData] = useState<Record<string, StockPrice[]>>({});
   const [loading, setLoading] = useState(true);
+  const [symbols, setSymbols] = useState<string[]>([]); // シンボルのリスト
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]); // 選択された複数のシンボル
+  const [timeRange, setTimeRange] = useState(24); // デフォルトの時間範囲 (24時間)
 
+  // 初期表示時にシンボルリストを取得
   useEffect(() => {
-    // useEffectの中でSupabaseのデータ取得を行う
-    const fetchStockPrices = async () => {
-      setLoading(true);
+    const fetchSymbols = async () => {
+      const { data, error } = await supabase.from("stock_prices").select("symbol");
+
+      if (error) {
+        console.error("Error fetching symbols:", error);
+      } else {
+        const uniqueSymbols = Array.from(new Set(data?.map((item: { symbol: string }) => item.symbol)));
+        setSymbols(uniqueSymbols || []);
+      }
+    };
+
+    fetchSymbols();
+  }, []);
+
+  // シンボルや時間範囲の変更時にデータを取得
+  useEffect(() => {
+    if (selectedSymbols.length > 0) {
+      fetchStockPrices();
+    }
+  }, [selectedSymbols, timeRange]);
+
+  const fetchStockPrices = async () => {
+    setLoading(true);
+    const stockDataMap: Record<string, StockPrice[]> = {};
+
+    for (const symbol of selectedSymbols) {
       const { data, error } = await supabase
         .from("stock_prices")
         .select("*")
+        .eq("symbol", symbol)
         .order("timestamp", { ascending: true });
 
       if (error) {
-        console.error("Error fetching stock prices:", error);
-      } else {
-        setStockData(data as StockPrice[]);
+        console.error(`Error fetching stock prices for ${symbol}:`, error);
+        continue;
       }
 
-      setLoading(false);
-    };
+      const filteredData = data?.filter((item) => {
+        const hoursDifference =
+          (new Date().getTime() - new Date(item.timestamp).getTime()) /
+          (1000 * 60 * 60);
+        return hoursDifference <= timeRange;
+      });
 
-    fetchStockPrices();
-  }, []);
+      stockDataMap[symbol] = filteredData as StockPrice[];
+    }
+
+    setStockData(stockDataMap);
+    setLoading(false);
+  };
 
   const chartData = {
-    labels: stockData.map((item) =>
-      new Date(item.timestamp).toLocaleString()
-    ),
-    datasets: [
-      {
-        label: "Stock Price",
-        data: stockData.map((item) => item.price),
-        borderColor: "rgba(75, 192, 192, 1)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        tension: 0.1,
-      },
-    ],
+    labels: stockData[selectedSymbols[0]]
+      ? stockData[selectedSymbols[0]].map((item) =>
+          new Date(item.timestamp).toLocaleString()
+        )
+      : [],
+    datasets: selectedSymbols.map((symbol, index) => ({
+      label: symbol,
+      data: stockData[symbol] ? stockData[symbol].map((item) => item.price) : [],
+      borderColor: `hsl(${(index * 60) % 360}, 70%, 50%)`,
+      backgroundColor: `hsla(${(index * 60) % 360}, 70%, 50%, 0.2)`,
+      tension: 0.1,
+    })),
   };
 
   const options = {
     responsive: true,
     plugins: {
       legend: {
-        position: "top" as const, // 型指定
+        position: "top" as const,
       },
       title: {
         display: true,
-        text: "Stock Price Over Time",
+        text: `Stock Prices for Selected Symbols (Last ${timeRange} hours)`,
       },
     },
   };
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold text-center mb-8">
-        Stock Price Visualizer
-      </h1>
+      <h1 className="text-3xl font-bold text-center mb-8">Stock Price Visualizer</h1>
+
+      <div className="flex justify-center space-x-4 mb-6">
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-900">
+            Select Stock Symbols
+          </label>
+          <select
+            className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+            value={selectedSymbols}
+            onChange={(e) =>
+              setSelectedSymbols(
+                Array.from(e.target.selectedOptions, (option) => option.value)
+              )
+            }
+            multiple // 複数選択可能
+          >
+            {symbols.map((symbol) => (
+              <option key={symbol} value={symbol}>
+                {symbol}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-900">
+            Select Time Range (Hours)
+          </label>
+          <input
+            type="number"
+            className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+            value={timeRange}
+            onChange={(e) => setTimeRange(Number(e.target.value))}
+            min="1"
+            max="72"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-center">Loading...</p>
       ) : (
