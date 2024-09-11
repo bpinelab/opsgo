@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { supabase } from "../lib/supabaseClient";
@@ -24,8 +22,15 @@ ChartJS.register(
   Legend
 );
 
+type StockPrice = {
+  symbol: string;
+  price: number;
+  timestamp: string;
+};
+
 const Home = () => {
-  const [stockData, setStockData] = useState([]);
+  // stockDataの型をStockPrice[]と明示的に指定
+  const [stockData, setStockData] = useState<StockPrice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +47,7 @@ const Home = () => {
     if (error) {
       console.error("Error fetching stock prices:", error);
     } else {
-      setStockData(data);
+      setStockData(data as StockPrice[]); // 取得データをStockPrice型にキャスト
     }
 
     setLoading(false);
