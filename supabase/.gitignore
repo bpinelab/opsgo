@@ -1,0 +1,11 @@
+# Supabase
+.branches
+.temp
+.env
+
+# npm
+node_modules
+
+# deno
+deno.lock
+
