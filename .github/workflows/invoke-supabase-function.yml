@@ -3,7 +3,7 @@ name: Invoke Supabase Function
 # スケジュール設定。1時間おきに実行
 on:
   schedule:
-    - cron: "0 * * * *"  # 1時間ごとに実行されるCRON表現
+  #  - cron: "* * * * *"  # 1時間ごとに実行されるCRON表現
     # - cron: "*/5 * * * *"  # 5分ごとに実行されるCRON表現
 
 jobs:
